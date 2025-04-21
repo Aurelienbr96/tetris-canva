@@ -1,4 +1,149 @@
-import { TetrisMatrixType } from "./tetrisBoard";
+const O = [
+  [
+    [1, 1],
+    [1, 1],
+  ],
+];
+const S = [
+  [
+    [0, 1, 1],
+    [1, 1, 0],
+    [0, 0, 0],
+  ],
+  [
+    [0, 1, 0],
+    [0, 1, 1],
+    [0, 0, 1],
+  ],
+  [
+    [0, 0, 0],
+    [0, 1, 1],
+    [1, 1, 0],
+  ],
+  [
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+  ],
+];
+const I = [
+  [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+  ],
+  [
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+  ],
+  [
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+  ],
+  [
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ],
+];
+
+const Z = [
+  [
+    [1, 1, 0],
+    [0, 1, 1],
+    [0, 0, 0],
+  ],
+  [
+    [0, 0, 1],
+    [0, 1, 1],
+    [0, 1, 0],
+  ],
+  [
+    [0, 0, 0],
+    [1, 1, 0],
+    [0, 1, 1],
+  ],
+  [
+    [0, 1, 0],
+    [1, 1, 0],
+    [1, 0, 0],
+  ],
+];
+
+const T = [
+  [
+    [0, 1, 0],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
+  [
+    [0, 1, 0],
+    [0, 1, 1],
+    [0, 1, 0],
+  ],
+  [
+    [0, 0, 0],
+    [1, 1, 1],
+    [0, 1, 0],
+  ],
+  [
+    [0, 1, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+  ],
+];
+
+const L = [
+  [
+    [0, 0, 1],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
+  [
+    [0, 1, 0],
+    [0, 1, 0],
+    [0, 1, 1],
+  ],
+  [
+    [0, 0, 0],
+    [1, 1, 1],
+    [1, 0, 0],
+  ],
+  [
+    [1, 1, 0],
+    [0, 1, 0],
+    [0, 1, 0],
+  ],
+];
+
+const J = [
+  [
+    [1, 0, 0],
+    [1, 1, 1],
+    [0, 0, 0],
+  ],
+  [
+    [0, 1, 1],
+    [0, 1, 0],
+    [0, 1, 0],
+  ],
+  [
+    [0, 0, 0],
+    [1, 1, 1],
+    [0, 0, 1],
+  ],
+  [
+    [0, 1, 0],
+    [0, 1, 0],
+    [1, 1, 0],
+  ],
+];
 
 export abstract class ActivePiece {
   public willColide = false;
@@ -59,7 +204,7 @@ export abstract class ActivePiece {
   }
 
   public static getRandomPiece(x: number, y: number): ActivePiece {
-    const PIECES = [OPiece, IPiece, SPiece];
+    const PIECES = [OPiece, IPiece, SPiece, JPiece, LPiece, TPiece, ZPiece];
     const RandomPieceClass = PIECES[Math.floor(Math.random() * PIECES.length)];
     return new RandomPieceClass(x, y);
   }
@@ -67,66 +212,7 @@ export abstract class ActivePiece {
   public getXLength() {
     return this.shape[0].length;
   }
-
-  private canMoveRight(tetrisMatrix: TetrisMatrixType) {
-    // check last X of the piece vs tetris matrix, if !== null is
-  }
 }
-
-const O = [
-  [
-    [1, 1],
-    [1, 1],
-  ],
-];
-const S = [
-  [
-    [0, 1, 1],
-    [1, 1, 0],
-    [0, 0, 0],
-  ],
-  [
-    [0, 1, 0],
-    [0, 1, 1],
-    [0, 0, 1],
-  ],
-  [
-    [0, 0, 0],
-    [0, 1, 1],
-    [1, 1, 0],
-  ],
-  [
-    [1, 0, 0],
-    [1, 1, 0],
-    [0, 1, 0],
-  ],
-];
-const I = [
-  [
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-  ],
-  [
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [1, 1, 1, 1],
-    [0, 0, 0, 0],
-  ],
-  [
-    [0, 1, 0, 0],
-    [0, 1, 0, 0],
-    [0, 1, 0, 0],
-    [0, 1, 0, 0],
-  ],
-  [
-    [0, 0, 0, 0],
-    [1, 1, 1, 1],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-  ],
-];
 
 export class OPiece extends ActivePiece {
   constructor(x: number, y: number) {
@@ -140,14 +226,37 @@ export class IPiece extends ActivePiece {
 }
 export class SPiece extends ActivePiece {
   constructor(x: number, y: number) {
-    super(S[0], x, y, "#E93D1E", S);
+    super(S[0], x, y, "#01FF00", S);
   }
 
   public rorate() {}
 }
 
-export function getRandomPiece(x: number, y: number): ActivePiece {
-  const PIECES = [OPiece, IPiece, SPiece];
-  const RandomPieceClass = PIECES[Math.floor(Math.random() * PIECES.length)];
-  return new RandomPieceClass(x, y);
+export class JPiece extends ActivePiece {
+  constructor(x: number, y: number) {
+    super(J[0], x, y, "#0000FF", J);
+  }
+
+  public rorate() {}
+}
+export class LPiece extends ActivePiece {
+  constructor(x: number, y: number) {
+    super(L[0], x, y, "#FFAA01", L);
+  }
+
+  public rorate() {}
+}
+export class TPiece extends ActivePiece {
+  constructor(x: number, y: number) {
+    super(T[0], x, y, "#9900FE", T);
+  }
+
+  public rorate() {}
+}
+export class ZPiece extends ActivePiece {
+  constructor(x: number, y: number) {
+    super(Z[0], x, y, "#FF0000", Z);
+  }
+
+  public rorate() {}
 }

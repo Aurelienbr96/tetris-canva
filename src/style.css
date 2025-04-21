@@ -1,3 +1,17 @@
 #myCanvas {
   border: thick double #32a1ce;
+  background-color: aliceblue;
+}
+
+body {
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #111;
+  justify-content: center;
+  align-items: center;
+}
+
+#startGame {
+  margin-top: 10px;
 }

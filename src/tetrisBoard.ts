@@ -1,16 +1,53 @@
 import { ActivePiece, SPiece } from "./activePiece";
 import { CollisionEvent, DomainEvent } from "./events/collisionEvent";
+import { StartGameEvent } from "./events/startGameEvent";
+import { PauseGameEvent } from "./events/pauseGameEvent";
+import { CompletedRowEvent } from "./events/completedRowEvent";
 
 export type TetrisMatrixType = (string | null)[][];
 
 export class TetrisBoard {
   private board: TetrisMatrixType;
+  private gameState: "NOT_STARTED" | "PAUSE" | "PLAYING" | "GAMEOVER" =
+    "NOT_STARTED";
   private activePiece: ActivePiece;
+  private score: number = 0;
+  private level: number = 1;
   private domainEvents: DomainEvent[] = [];
 
   constructor() {
-    this.board = Array.from({ length: 20 }, () => Array(10).fill(null));
+    this.board = Array.from({ length: 22 }, () => Array(10).fill(null));
     this.activePiece = new SPiece(3, 0);
+  }
+
+  getLevel() {
+    return this.level;
+  }
+
+  getScore() {
+    return this.score;
+  }
+
+  isGamePaused() {
+    return this.gameState === "PAUSE";
+  }
+
+  isGameOver() {
+    return this.gameState === "GAMEOVER";
+  }
+
+  didGameStart() {
+    return this.gameState !== "NOT_STARTED";
+  }
+
+  pauseGame() {
+    this.gameState = "PAUSE";
+    this.domainEvents.push(new PauseGameEvent());
+  }
+
+  startGame() {
+    this.domainEvents.push(new StartGameEvent());
+    this.gameState = "PLAYING";
   }
 
   generateNewActivePiece() {
@@ -107,6 +144,7 @@ export class TetrisBoard {
 
   public moveActivePieceLeft() {
     this.activePiece.willColide = false;
+
     if (this.canMoveLeft()) {
       this.activePiece.setX(this.activePiece.getX() - 1);
     }
@@ -114,6 +152,7 @@ export class TetrisBoard {
 
   public moveActivePieceRight() {
     this.activePiece.willColide = false;
+
     if (this.canMoveRight()) {
       this.activePiece.setX(this.activePiece.getX() + 1);
     }
@@ -121,10 +160,14 @@ export class TetrisBoard {
 
   public moveActivePieceDown() {
     this.checkColision();
-
+    if (this.activePiece.willColide && this.checkIsGameOver()) {
+      this.gameState = "GAMEOVER";
+      return;
+    }
     if (this.activePiece.willColide) {
       const colEvent = new CollisionEvent();
       this.domainEvents.push(colEvent);
+
       this.insertActivePieceIntoBoard();
     } else {
       this.activePiece.setY(this.activePiece.getY() + 1);
@@ -146,20 +189,31 @@ export class TetrisBoard {
     }
   };
 
+  private calculateScore(clearedLines: number) {
+    this.score = this.score + clearedLines * 40 * this.level;
+  }
+
+  public hardDrop() {
+    while (!this.activePiece.willColide) {
+      this.moveActivePieceDown();
+    }
+  }
+
   public getCompletedRows() {
     const fullLines: number[] = [];
     for (let y = 0; y < this.board.length; y++) {
       if (this.board[y].every((cell) => cell !== null)) {
         fullLines.push(y);
+        this.domainEvents.push(new CompletedRowEvent());
       }
+    }
+    if (fullLines.length > 0) {
+      this.calculateScore(fullLines.length);
     }
     return fullLines;
   }
 
   public checkColision() {
-    // for all the position of x y of the shape check the y - 1 of this position in the tetrisMatrix, if it is 1 then it will collide
-
-    // col = y axis
     for (const [innerY, col] of this.activePiece.getShape().entries()) {
       if (this.activePiece.willColide) {
         break;
@@ -185,11 +239,18 @@ export class TetrisBoard {
 
             break;
           } else if (tetrisVal === null) {
-            // this.activePiece.willColide = false;
+            this.activePiece.willColide = false;
           }
         }
       }
     }
+  }
+
+  checkIsGameOver() {
+    if (this.activePiece.getY() < 2) {
+      return true;
+    }
+    return false;
   }
 
   insertActivePieceIntoBoard() {

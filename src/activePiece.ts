@@ -2,12 +2,14 @@ import { TetrisMatrixType } from "./tetrisBoard";
 
 export abstract class ActivePiece {
   public willColide = false;
+  private currentShape = 0;
 
   constructor(
-    private readonly shape: number[][],
+    private shape: number[][],
     private x: number,
     private y: number,
-    private color: string
+    private color: string,
+    private shapes: Array<number[][]>
   ) {}
 
   getShape() {
@@ -20,6 +22,21 @@ export abstract class ActivePiece {
 
   getPosition() {
     return { x: this.x, y: this.y };
+  }
+
+  rotate() {
+    const nextStep = this.currentShape + 1;
+    if (this.shapes[nextStep] === undefined) {
+      this.currentShape = 0;
+      const currentShape = this.shapes[0];
+      this.shape = currentShape;
+      return currentShape;
+    } else {
+      const currentShape = this.shapes[nextStep];
+      this.currentShape = nextStep;
+      this.shape = currentShape;
+      return currentShape;
+    }
   }
 
   getY() {
@@ -54,34 +71,76 @@ export abstract class ActivePiece {
   private canMoveRight(tetrisMatrix: TetrisMatrixType) {
     // check last X of the piece vs tetris matrix, if !== null is
   }
-
-  public rotate() {}
 }
 
 const O = [
-  [1, 1],
-  [1, 1],
+  [
+    [1, 1],
+    [1, 1],
+  ],
 ];
 const S = [
-  [0, 1, 1],
-  [1, 1, 0],
-  [0, 0, 0],
+  [
+    [0, 1, 1],
+    [1, 1, 0],
+    [0, 0, 0],
+  ],
+  [
+    [0, 1, 0],
+    [0, 1, 1],
+    [0, 0, 1],
+  ],
+  [
+    [0, 0, 0],
+    [0, 1, 1],
+    [1, 1, 0],
+  ],
+  [
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+  ],
 ];
-const I = [[1], [1], [1], [1]];
+const I = [
+  [
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+  ],
+  [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+  ],
+  [
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 0, 0],
+  ],
+  [
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ],
+];
 
 export class OPiece extends ActivePiece {
   constructor(x: number, y: number) {
-    super(O, x, y, "#FEF84B");
+    super(O[0], x, y, "#FEF84B", O);
   }
 }
 export class IPiece extends ActivePiece {
   constructor(x: number, y: number) {
-    super(I, x, y, "#51E1FB");
+    super(I[0], x, y, "#51E1FB", I);
   }
 }
 export class SPiece extends ActivePiece {
   constructor(x: number, y: number) {
-    super(S, x, y, "#E93D1E");
+    super(S[0], x, y, "#E93D1E", S);
   }
 
   public rorate() {}

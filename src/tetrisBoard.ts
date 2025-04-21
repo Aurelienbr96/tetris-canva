@@ -1,4 +1,4 @@
-import { ActivePiece } from "./activePiece";
+import { ActivePiece, SPiece } from "./activePiece";
 import { CollisionEvent, DomainEvent } from "./events/collisionEvent";
 
 export type TetrisMatrixType = (string | null)[][];
@@ -9,8 +9,8 @@ export class TetrisBoard {
   private domainEvents: DomainEvent[] = [];
 
   constructor() {
-    this.board = Array.from({ length: 10 }, () => Array(20).fill(null));
-    this.activePiece = ActivePiece.getRandomPiece(3, 0);
+    this.board = Array.from({ length: 20 }, () => Array(10).fill(null));
+    this.activePiece = new SPiece(3, 0);
   }
 
   generateNewActivePiece() {
@@ -31,6 +31,12 @@ export class TetrisBoard {
     return this.activePiece.getColor();
   }
 
+  /**
+   * Returns the current position of the active piece on the board.
+   *
+   * @returns {Object} The position of the active piece, typically as an object
+   *                   with `x` and `y` coordinates, top left of the position of the shape inside the board
+   */
   getActivePiecePosition() {
     return this.activePiece.getPosition();
   }
@@ -40,30 +46,77 @@ export class TetrisBoard {
   }
 
   getTetrisWidth() {
-    return this.board.length;
-  }
-
-  getTetrisHeight() {
     return this.board[0].length;
   }
 
+  getTetrisHeight() {
+    return this.board.length;
+  }
+
   getValue(x: number, y: number) {
-    return this.board?.[x]?.[y];
+    return this.board?.[y]?.[x];
   }
 
   setValue(x: number, y: number, value: string) {
-    this.board[x][y] = value;
+    this.board[y][x] = value;
+  }
+
+  private canMoveRight() {
+    let canMove = true;
+    for (const [y, val] of this.activePiece.getShape().entries()) {
+      for (let x = val.length - 1; x > 0; x--) {
+        const nextX = x + 1;
+        if (val[x] !== 0) {
+          if (
+            this.getValue(
+              this.activePiece.getX() + nextX,
+              this.activePiece.getY() + y
+            ) !== null
+          ) {
+            canMove = false;
+          }
+          break;
+        }
+      }
+    }
+
+    return canMove;
+  }
+
+  private canMoveLeft() {
+    let canMove = true;
+    for (const [y, val] of this.activePiece.getShape().entries()) {
+      for (let x = 0; x < val.length; x++) {
+        const nextX = x - 1;
+        if (val[x] !== 0) {
+          if (
+            this.getValue(
+              this.activePiece.getX() + nextX,
+              this.activePiece.getY() + y
+            ) !== null
+          ) {
+            canMove = false;
+          }
+          break;
+        }
+      }
+    }
+
+    return canMove;
   }
 
   public moveActivePieceLeft() {
     this.activePiece.willColide = false;
-
-    this.activePiece.setX(this.activePiece.getX() - 1);
+    if (this.canMoveLeft()) {
+      this.activePiece.setX(this.activePiece.getX() - 1);
+    }
   }
 
   public moveActivePieceRight() {
     this.activePiece.willColide = false;
-    this.activePiece.setX(this.activePiece.getX() + 1);
+    if (this.canMoveRight()) {
+      this.activePiece.setX(this.activePiece.getX() + 1);
+    }
   }
 
   public moveActivePieceDown() {
@@ -72,9 +125,35 @@ export class TetrisBoard {
     if (this.activePiece.willColide) {
       const colEvent = new CollisionEvent();
       this.domainEvents.push(colEvent);
+      this.insertActivePieceIntoBoard();
     } else {
       this.activePiece.setY(this.activePiece.getY() + 1);
     }
+  }
+
+  rotateActivePiece() {
+    this.activePiece.rotate();
+  }
+
+  removeTetrisLines = (toshift: number[]) => {
+    const toUnshift = new Array(10).fill(null);
+
+    for (const [, nToShift] of toshift.entries()) {
+      this.board.splice(nToShift, 1);
+    }
+    for (const [] of toshift.entries()) {
+      this.board.unshift(toUnshift);
+    }
+  };
+
+  public getCompletedRows() {
+    const fullLines: number[] = [];
+    for (let y = 0; y < this.board.length; y++) {
+      if (this.board[y].every((cell) => cell !== null)) {
+        fullLines.push(y);
+      }
+    }
+    return fullLines;
   }
 
   public checkColision() {
@@ -100,13 +179,13 @@ export class TetrisBoard {
 
         if (tetrisVal === undefined) {
           this.activePiece.willColide = true;
-        } else if (this.getTetrisHeight() - 1 > OneBelowTetriminosPosY) {
-          // console.log("values", posX, posY, tetrisVal, this.activePiece.willColide);
+        } else if (this.getTetrisHeight() > OneBelowTetriminosPosY) {
           if (tetrisVal !== null) {
             this.activePiece.willColide = true;
+
             break;
           } else if (tetrisVal === null) {
-            this.activePiece.willColide = false;
+            // this.activePiece.willColide = false;
           }
         }
       }
@@ -114,22 +193,14 @@ export class TetrisBoard {
   }
 
   insertActivePieceIntoBoard() {
-    // replace all 0 by 1
-    for (const [x, row] of this.activePiece.getShape().entries()) {
-      for (const [y, c] of row.entries()) {
+    for (const [y, row] of this.activePiece.getShape().entries()) {
+      for (const [x, c] of row.entries()) {
         if (c !== 0) {
           this.setValue(
             this.activePiece.getX() + x,
             this.activePiece.getY() + y,
             this.activePiece.getColor()
           );
-          console.log(
-            "setvalue",
-            this.activePiece.getX() + x,
-            this.activePiece.getY() + y,
-            this.activePiece.getColor()
-          );
-          console.log(this.board);
         }
       }
     }

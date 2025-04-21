@@ -1,7 +1,6 @@
-import { ActivePiece, getRandomPiece } from "./activePiece";
 import { CollisionEvent } from "./events/collisionEvent";
 import "./style.css";
-import { TetrisBoard, TetrisMatrixType } from "./tetrisBoard";
+import { TetrisBoard } from "./tetrisBoard";
 
 /*
 
@@ -20,44 +19,8 @@ speed up game per 50 points
 const heightBlock = 30;
 const widthBlock = 30;
 
-/* const createTetrisMatrix = (
-  width: number = 10,
-  height: number = 20
-): TetrisMatrixType => {
-  if (width < 10 || height < 20) {
-    throw new Error("matrix too small");
-  }
-
-  let matrix: TetrisMatrixType = [];
-
-  for (let i = 0; i < height - 1; i++) {
-    matrix.push([]);
-    for (let wIndex = 0; wIndex < width - 1; wIndex++) {
-      matrix[i].push(null);
-    }
-  }
-  return matrix;
-}; */
-
-/* const insertShapeIntoMatrix = (
-  input: ActivePiece,
-  matrix: TetrisMatrixType,
-  startX: number = 0,
-  startY: number = 0
-) => {
-  // replace all 0 by 1
-  for (const [lineNum, line] of input.shape.entries()) {
-    for (const [cIndex, c] of line.entries()) {
-      if (c !== 0) {
-        matrix[startY + lineNum][startX + cIndex] = input.color;
-      }
-    }
-  }
-}; */
-
 function drawActivePiece(tetris: TetrisBoard, ctx: CanvasRenderingContext2D) {
   for (const [index, col] of tetris.getActivePieceShape().entries()) {
-    // init x
     for (const [cIndex, c] of col.entries()) {
       if (c !== 0) {
         const { x, y } = tetris.getActivePiecePosition();
@@ -73,7 +36,7 @@ function drawActivePiece(tetris: TetrisBoard, ctx: CanvasRenderingContext2D) {
   }
 }
 
-const fromMatrixToDraw = (
+const mapBoardToDrawableBlocks = (
   tetrisMatrix: TetrisBoard
 ): Array<{ x: number; y: number; color: string }> => {
   let pos = 0;
@@ -105,36 +68,12 @@ const fromMatrixToDraw = (
   return initPos;
 };
 
-function calculateLines(board: (string | null)[][]): number[] {
-  const fullLines: number[] = [];
-  for (let y = 0; y < board.length; y++) {
-    if (board[y].every((cell) => cell !== null)) {
-      fullLines.push(y);
-    }
-  }
-  return fullLines;
-}
-
-const removeTetrisLines = (tetrisMatrix: TetrisBoard, toshift: number[]) => {
-  /* const toUnshift = new Array(9).fill(null);
-
-  for (const [, nToShift] of toshift.entries()) {
-    tetrisMatrix.board.splice(nToShift);
-    tetrisMatrix.board.unshift(toUnshift);
-  } */
-  // until we reach index inside to shift
-};
-
-// if 1 then its a case if not 1 then its empty
-
 const canva = document.querySelector<HTMLCanvasElement>("#myCanvas");
 
 if (canva) {
   const ctx = canva.getContext("2d");
 
   let tetrisMatrix = new TetrisBoard();
-
-  let activePiece = getRandomPiece(3, 0);
 
   canva.width = tetrisMatrix.getTetrisWidth() * widthBlock;
   canva.height = tetrisMatrix.getTetrisHeight() * heightBlock;
@@ -152,6 +91,11 @@ if (canva) {
         tetrisMatrix.moveActivePieceDown();
 
         break;
+      case " ":
+        tetrisMatrix.rotateActivePiece();
+
+        break;
+        break;
     }
   });
 
@@ -161,22 +105,18 @@ if (canva) {
     if (ctx && canva) {
       i = i + 1;
 
-      // activePiece.checkColision(tetrisMatrix);
-
-      const toshift = calculateLines(tetrisMatrix.getBoard());
-
-      if (toshift.length > 1) {
-        removeTetrisLines(tetrisMatrix, toshift);
-      }
-
       if (i === 35) {
         const domainEvents = tetrisMatrix.pullDomainEvents();
         let didColide = false;
         for (const domainEvent of domainEvents) {
-          if (domainEvent instanceof CollisionEvent) {
+          if (domainEvent instanceof CollisionEvent && !didColide) {
             didColide = true;
             tetrisMatrix.insertActivePieceIntoBoard();
             tetrisMatrix.generateNewActivePiece();
+            const completedRows = tetrisMatrix.getCompletedRows();
+            if (completedRows.length > 0) {
+              tetrisMatrix.removeTetrisLines(completedRows);
+            }
           }
         }
         if (!didColide) {
@@ -188,7 +128,7 @@ if (canva) {
       }
 
       ctx.clearRect(0, 0, canva.width, canva.height);
-      const todraw = fromMatrixToDraw(tetrisMatrix);
+      const todraw = mapBoardToDrawableBlocks(tetrisMatrix);
 
       for (const draw of todraw) {
         ctx.fillStyle = draw.color;

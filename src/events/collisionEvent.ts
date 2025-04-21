@@ -1,5 +1,5 @@
 export interface DomainEvent {
-  readonly type: "PieceCollisionDetected";
+  readonly type: "PieceCollisionDetected" | "CompletedRowEvent";
 }
 
 export class CollisionEvent implements DomainEvent {

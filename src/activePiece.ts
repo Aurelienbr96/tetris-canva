@@ -146,8 +146,7 @@ const J = [
 ];
 
 export abstract class ActivePiece {
-  public willColide = false;
-  private currentShape = 0;
+  private currentShapeIndex = 0;
 
   constructor(
     private shape: number[][],
@@ -161,6 +160,14 @@ export abstract class ActivePiece {
     return this.shape;
   }
 
+  getActivePieceInformations() {
+    return {
+      shapes: this.shapes,
+      currentShape: this.shape,
+      currentShapeIndex: this.currentShapeIndex,
+    };
+  }
+
   getX() {
     return this.x;
   }
@@ -169,16 +176,28 @@ export abstract class ActivePiece {
     return { x: this.x, y: this.y };
   }
 
+  getNextRotation(index?: number) {
+    const nextRotationIndex = (index || this.currentShapeIndex) + 1;
+    if (this.shapes[nextRotationIndex] === undefined) {
+      return { nextShapeIndex: 0, nextShape: this.shapes[0] };
+    } else {
+      return {
+        nextShapeIndex: nextRotationIndex,
+        nextShape: this.shapes[nextRotationIndex],
+      };
+    }
+  }
+
   rotate() {
-    const nextStep = this.currentShape + 1;
-    if (this.shapes[nextStep] === undefined) {
-      this.currentShape = 0;
+    const nextRotationIndex = this.currentShapeIndex + 1;
+    if (this.shapes[nextRotationIndex] === undefined) {
+      this.currentShapeIndex = 0;
       const currentShape = this.shapes[0];
       this.shape = currentShape;
       return currentShape;
     } else {
-      const currentShape = this.shapes[nextStep];
-      this.currentShape = nextStep;
+      const currentShape = this.shapes[nextRotationIndex];
+      this.currentShapeIndex = nextRotationIndex;
       this.shape = currentShape;
       return currentShape;
     }

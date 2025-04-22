@@ -143,28 +143,24 @@ export class TetrisBoard {
   }
 
   public moveActivePieceLeft() {
-    this.activePiece.willColide = false;
-
     if (this.canMoveLeft()) {
       this.activePiece.setX(this.activePiece.getX() - 1);
     }
   }
 
   public moveActivePieceRight() {
-    this.activePiece.willColide = false;
-
     if (this.canMoveRight()) {
       this.activePiece.setX(this.activePiece.getX() + 1);
     }
   }
 
   public moveActivePieceDown() {
-    this.checkColision();
-    if (this.activePiece.willColide && this.checkIsGameOver()) {
+    const willColide = this.checkColision();
+    if (willColide && this.checkIsGameOver()) {
       this.gameState = "GAMEOVER";
       return;
     }
-    if (this.activePiece.willColide) {
+    if (willColide) {
       const colEvent = new CollisionEvent();
       this.domainEvents.push(colEvent);
 
@@ -175,7 +171,9 @@ export class TetrisBoard {
   }
 
   rotateActivePiece() {
-    this.activePiece.rotate();
+    if (this.canRotate()) {
+      this.activePiece.rotate();
+    }
   }
 
   removeTetrisLines = (toshift: number[]) => {
@@ -194,7 +192,7 @@ export class TetrisBoard {
   }
 
   public hardDrop() {
-    while (!this.activePiece.willColide) {
+    while (!this.checkColision()) {
       this.moveActivePieceDown();
     }
   }
@@ -213,9 +211,41 @@ export class TetrisBoard {
     return fullLines;
   }
 
+  private isPositionFree(x: number, y: number) {
+    if (this.getValue(x, y) !== null) {
+      return false;
+    }
+    return true;
+  }
+
+  public canRotate() {
+    // const shapes = this.activePiece.getActivePieceInformations();
+    const nextRotation = this.activePiece.getNextRotation();
+    let canRotate = true;
+    for (const [y, line] of nextRotation.nextShape.entries()) {
+      if (!canRotate) {
+        break;
+      }
+      for (const [x] of line.entries()) {
+        if (
+          !this.isPositionFree(
+            this.activePiece.getX() + x,
+            this.activePiece.getY() + y
+          )
+        ) {
+          canRotate = false;
+          break;
+        }
+      }
+    }
+
+    return canRotate;
+  }
+
   public checkColision() {
+    let willColide = false;
     for (const [innerY, col] of this.activePiece.getShape().entries()) {
-      if (this.activePiece.willColide) {
+      if (willColide) {
         break;
       }
       // x axis
@@ -232,18 +262,19 @@ export class TetrisBoard {
         const tetrisVal = this.getValue(posX, OneBelowTetriminosPosY);
 
         if (tetrisVal === undefined) {
-          this.activePiece.willColide = true;
+          willColide = true;
         } else if (this.getTetrisHeight() > OneBelowTetriminosPosY) {
           if (tetrisVal !== null) {
-            this.activePiece.willColide = true;
+            willColide = true;
 
             break;
           } else if (tetrisVal === null) {
-            this.activePiece.willColide = false;
+            willColide = false;
           }
         }
       }
     }
+    return willColide;
   }
 
   checkIsGameOver() {

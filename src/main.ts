@@ -6,8 +6,8 @@ import { TetrisUI } from "./tetrisUi";
 /*
 todo: fix calculus of full lines
 add game over
-add score
-add next tetrimos
+add levels
+add next tetrimos (bags of 7 tetrimos)
 add rotation
 add more shape into the tetris
 make the tetrimos appear 2 steps above the board
@@ -21,11 +21,11 @@ const canva = document.querySelector<HTMLCanvasElement>("#myCanvas");
 if (canva) {
   const ctx = canva.getContext("2d");
   if (ctx) {
-    const tetrisMatrix = new TetrisBoard();
+    const tetrisBoard = new TetrisBoard();
     const audioHandler = new AudioHandler("../TetrisTheme.mp3");
 
     const tetrisUI = new TetrisUI(
-      tetrisMatrix,
+      tetrisBoard,
       ctx as CanvasRenderingContext2D,
       canva,
       audioHandler
@@ -34,23 +34,22 @@ if (canva) {
     document.addEventListener("keydown", (ev) => {
       switch (ev.key) {
         case "ArrowLeft":
-          tetrisMatrix.moveActivePieceLeft();
+          tetrisBoard.moveActivePieceLeft();
           break;
 
         case "ArrowRight":
-          tetrisMatrix.moveActivePieceRight();
+          tetrisBoard.moveActivePieceRight();
           break;
         case "ArrowDown":
-          tetrisMatrix.moveActivePieceDown();
-
+          tetrisBoard.moveActivePieceDown();
           break;
 
         case " ":
-          tetrisMatrix.hardDrop();
+          tetrisBoard.hardDrop();
           break;
 
         case "ArrowUp":
-          tetrisMatrix.rotateActivePiece();
+          tetrisBoard.rotateActivePiece();
 
           break;
       }
@@ -58,18 +57,18 @@ if (canva) {
 
     const startGameButton = document.getElementById("startGame");
     const onStartGameClick = () => {
-      if (!tetrisMatrix.didGameStart()) {
-        tetrisMatrix.startGame();
+      if (!tetrisBoard.didGameStart()) {
+        tetrisBoard.startGame();
         requestAnimationFrame(() => tetrisUI.draw());
         // @ts-ignore dont worry
         startGameButton.textContent = "pause";
-      } else if (tetrisMatrix.isGamePaused()) {
-        tetrisMatrix.startGame();
+      } else if (tetrisBoard.isGamePaused()) {
+        tetrisBoard.startGame();
         requestAnimationFrame(() => tetrisUI.draw());
         // @ts-ignore dont worry
         startGameButton.textContent = "pause";
       } else {
-        tetrisMatrix.pauseGame();
+        tetrisBoard.pauseGame();
         // @ts-ignore dont worry
         startGameButton.textContent = "play";
       }

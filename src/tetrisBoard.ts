@@ -1,23 +1,53 @@
-import { ActivePiece, SPiece } from "./activePiece";
-import { CollisionEvent, DomainEvent } from "./events/collisionEvent";
+import { Tetromino, TetrominoFactory } from "./activePiece";
+import { DomainEvent } from "./events/collisionEvent";
 import { StartGameEvent } from "./events/startGameEvent";
 import { PauseGameEvent } from "./events/pauseGameEvent";
 import { CompletedRowEvent } from "./events/completedRowEvent";
 
 export type TetrisMatrixType = (string | null)[][];
 
+function gameActionGuard() {
+  return function logMethod(
+    _target: TetrisBoard,
+    key: any,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = function (this: TetrisBoard, ...args: any[]) {
+      const isGamePlaying = this.isGamePlaying();
+
+      if (!isGamePlaying) {
+        console.log(`Game is not playing. Skipping ${key} call.`);
+        return;
+      }
+
+      // Call the original method
+      return originalMethod.apply(this, args);
+    };
+
+    return descriptor;
+  };
+}
+
 export class TetrisBoard {
   private board: TetrisMatrixType;
   private gameState: "NOT_STARTED" | "PAUSE" | "PLAYING" | "GAMEOVER" =
     "NOT_STARTED";
-  private activePiece: ActivePiece;
+  private activePiece: Tetromino;
+  private tetrominoFactory: TetrominoFactory;
   private score: number = 0;
   private level: number = 1;
   private domainEvents: DomainEvent[] = [];
 
   constructor() {
     this.board = Array.from({ length: 22 }, () => Array(10).fill(null));
-    this.activePiece = new SPiece(3, 0);
+    this.tetrominoFactory = new TetrominoFactory();
+    this.activePiece = this.tetrominoFactory.createTetromino("S", 3, 0);
+  }
+
+  isGamePlaying() {
+    return this.gameState === "PLAYING";
   }
 
   getLevel() {
@@ -51,7 +81,9 @@ export class TetrisBoard {
   }
 
   generateNewActivePiece() {
-    this.activePiece = ActivePiece.getRandomPiece(3, 0);
+    const PIECES = ["O", "I", "S", "J", "L", "T", "Z"] as const;
+    const randomPiece = PIECES[Math.floor(Math.random() * PIECES.length)];
+    this.activePiece = this.tetrominoFactory.createTetromino(randomPiece, 3, 0);
   }
 
   pullDomainEvents() {
@@ -142,34 +174,40 @@ export class TetrisBoard {
     return canMove;
   }
 
+  @gameActionGuard()
   public moveActivePieceLeft() {
     if (this.canMoveLeft()) {
       this.activePiece.setX(this.activePiece.getX() - 1);
     }
   }
 
+  @gameActionGuard()
   public moveActivePieceRight() {
     if (this.canMoveRight()) {
       this.activePiece.setX(this.activePiece.getX() + 1);
     }
   }
 
+  @gameActionGuard()
   public moveActivePieceDown() {
-    const willColide = this.checkColision();
+    const willColide = this.checkCollision();
     if (willColide && this.checkIsGameOver()) {
       this.gameState = "GAMEOVER";
       return;
     }
     if (willColide) {
-      const colEvent = new CollisionEvent();
-      this.domainEvents.push(colEvent);
-
       this.insertActivePieceIntoBoard();
+      this.generateNewActivePiece();
+      const completedRows = this.getCompletedRows();
+      if (completedRows.length > 0) {
+        this.removeTetrisLines(completedRows);
+      }
     } else {
       this.activePiece.setY(this.activePiece.getY() + 1);
     }
   }
 
+  @gameActionGuard()
   rotateActivePiece() {
     if (this.canRotate()) {
       this.activePiece.rotate();
@@ -179,10 +217,10 @@ export class TetrisBoard {
   removeTetrisLines = (toshift: number[]) => {
     const toUnshift = new Array(10).fill(null);
 
-    for (const [, nToShift] of toshift.entries()) {
-      this.board.splice(nToShift, 1);
+    for (let i = 0; i < toUnshift.length; i++) {
+      this.board.splice(toshift[i], 1);
     }
-    for (const [] of toshift.entries()) {
+    for (let i = 0; i < toUnshift.length; i++) {
       this.board.unshift(toUnshift);
     }
   };
@@ -192,7 +230,7 @@ export class TetrisBoard {
   }
 
   public hardDrop() {
-    while (!this.checkColision()) {
+    while (!this.checkCollision()) {
       this.moveActivePieceDown();
     }
   }
@@ -242,7 +280,7 @@ export class TetrisBoard {
     return canRotate;
   }
 
-  public checkColision() {
+  public checkCollision() {
     let willColide = false;
     for (const [innerY, col] of this.activePiece.getShape().entries()) {
       if (willColide) {

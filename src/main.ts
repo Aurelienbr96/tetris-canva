@@ -22,6 +22,7 @@ if (canva) {
   const ctx = canva.getContext("2d");
   if (ctx) {
     const tetrisBoard = new TetrisBoard();
+
     const audioHandler = new AudioHandler("../TetrisTheme.mp3");
 
     const tetrisUI = new TetrisUI(
@@ -30,6 +31,8 @@ if (canva) {
       canva,
       audioHandler
     );
+
+    tetrisUI.draw();
 
     document.addEventListener("keydown", (ev) => {
       switch (ev.key) {
@@ -61,19 +64,24 @@ if (canva) {
         tetrisBoard.startGame();
         requestAnimationFrame(() => tetrisUI.draw());
         // @ts-ignore dont worry
-        startGameButton.textContent = "pause";
+        startGameButton.textContent = "PAUSE";
       } else if (tetrisBoard.isGamePaused()) {
         tetrisBoard.startGame();
         requestAnimationFrame(() => tetrisUI.draw());
         // @ts-ignore dont worry
-        startGameButton.textContent = "pause";
+        startGameButton.textContent = "PAUSE";
       } else {
         tetrisBoard.pauseGame();
         // @ts-ignore dont worry
-        startGameButton.textContent = "play";
+        startGameButton.textContent = "PLAY";
       }
     };
 
     startGameButton?.addEventListener("click", onStartGameClick);
+    startGameButton?.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        event.preventDefault(); // Prevents scrolling AND the click trigger
+      }
+    });
   }
 }

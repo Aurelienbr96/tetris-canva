@@ -145,7 +145,7 @@ const J = [
   ],
 ];
 
-export abstract class ActivePiece {
+export class Tetromino {
   private currentShapeIndex = 0;
 
   constructor(
@@ -222,60 +222,53 @@ export abstract class ActivePiece {
     this.y = y;
   }
 
-  public static getRandomPiece(x: number, y: number): ActivePiece {
-    const PIECES = [OPiece, IPiece, SPiece, JPiece, LPiece, TPiece, ZPiece];
-    const RandomPieceClass = PIECES[Math.floor(Math.random() * PIECES.length)];
-    return new RandomPieceClass(x, y);
-  }
-
   public getXLength() {
     return this.shape[0].length;
   }
 }
+type PossibleTetromino = "O" | "I" | "S" | "J" | "L" | "T" | "Z";
+export class TetrominoFactory {
+  constructor() {}
 
-export class OPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(O[0], x, y, "#FEF84B", O);
-  }
-}
-export class IPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(I[0], x, y, "#51E1FB", I);
-  }
-}
-export class SPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(S[0], x, y, "#01FF00", S);
-  }
+  createTetromino(name: PossibleTetromino, x: number, y: number) {
+    const mapNameToClass: Record<
+      PossibleTetromino,
+      {
+        color: string;
+        shape: number[][][];
+      }
+    > = {
+      O: {
+        shape: O,
+        color: "#FEF84B",
+      },
+      S: {
+        shape: S,
+        color: "#01FF00",
+      },
+      I: {
+        shape: I,
+        color: "#51E1FB",
+      },
+      J: {
+        shape: J,
+        color: "#0000FF",
+      },
+      L: {
+        shape: L,
+        color: "#FFAA01",
+      },
+      T: {
+        shape: T,
+        color: "#9900FE",
+      },
+      Z: {
+        shape: Z,
+        color: "#FF0000",
+      },
+    };
+    const { shape, color } = mapNameToClass[name];
 
-  public rorate() {}
-}
-
-export class JPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(J[0], x, y, "#0000FF", J);
+    return new Tetromino(shape[0], x, y, color, shape);
   }
-
-  public rorate() {}
-}
-export class LPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(L[0], x, y, "#FFAA01", L);
-  }
-
-  public rorate() {}
-}
-export class TPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(T[0], x, y, "#9900FE", T);
-  }
-
-  public rorate() {}
-}
-export class ZPiece extends ActivePiece {
-  constructor(x: number, y: number) {
-    super(Z[0], x, y, "#FF0000", Z);
-  }
-
-  public rorate() {}
 }

@@ -1,10 +1,8 @@
-#myCanvas {
-  border: thick double #32a1ce;
-  background-color: aliceblue;
-}
+#myCanvas {}
 
 body {
-  height: 80vh;
+  margin: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #111;

@@ -1,5 +1,4 @@
 import { AudioHandler } from "./audioHandler";
-import { CollisionEvent } from "./events/collisionEvent";
 import { PauseGameEvent } from "./events/pauseGameEvent";
 import { StartGameEvent } from "./events/startGameEvent";
 import { TetrisBoard } from "./tetrisBoard";
@@ -8,6 +7,8 @@ export class TetrisUI {
   private heightBlock = 30;
   private widthBlock = 30;
   private uiframe = 0;
+  private squareBackgroundColor = "#444444";
+  private textColor = "white";
 
   constructor(
     private tetris: TetrisBoard,
@@ -15,8 +16,19 @@ export class TetrisUI {
     private canva: HTMLCanvasElement,
     private audioHandler: AudioHandler
   ) {
-    canva.width = tetris.getTetrisWidth() * this.widthBlock;
-    canva.height = tetris.getTetrisHeight() * this.heightBlock;
+    //const width = tetris.getTetrisWidth() * this.widthBlock;
+    // canva.height = tetris.getTetrisHeight() * this.heightBlock;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Get the CSS size
+    const rect = canva.getBoundingClientRect();
+
+    // Set the actual pixel size
+    canva.width = rect.width * dpr;
+    canva.height = rect.height * dpr;
+
+    // Scale the context to match
+    ctx.scale(dpr, dpr);
     this.draw = this.draw.bind(this);
   }
 
@@ -25,19 +37,29 @@ export class TetrisUI {
       for (const [cIndex, c] of col.entries()) {
         if (c !== 0) {
           const { x, y } = this.tetris.getActivePiecePosition();
+          this.ctx.beginPath();
+
           this.ctx.fillStyle = this.tetris.getActivePieceColor();
-          this.ctx.fillRect(
-            (cIndex + x) * this.heightBlock,
-            (index + y) * this.widthBlock,
-            this.heightBlock,
-            this.widthBlock
+          this.ctx.lineWidth = 0.5;
+          this.ctx.strokeStyle = "black";
+          this.ctx.rect(
+            (cIndex + x) * this.widthBlock,
+            (index + y) * this.heightBlock,
+            this.widthBlock,
+            this.heightBlock
           );
+          this.ctx.fill();
+          this.ctx.stroke();
         }
       }
     }
   }
 
-  mapBoardToDrawableBlocks(): Array<{ x: number; y: number; color: string }> {
+  mapBoardToDrawableBlocks(): Array<{
+    x: number;
+    y: number;
+    color: string | null;
+  }> {
     let pos = 0;
     const initPos = [];
     for (
@@ -54,17 +76,21 @@ export class TetrisUI {
         let x = blockIndex * this.widthBlock;
         let y = lineIndex * this.heightBlock;
 
-        if (value !== null) {
-          pos = pos + 1;
-          initPos.push({
-            x,
-            y,
-            color: value,
-          });
-        }
+        pos = pos + 1;
+        initPos.push({
+          x,
+          y,
+          color: value,
+        });
       }
     }
     return initPos;
+  }
+
+  private drawScoreText() {
+    this.ctx.font = "20px Arial";
+    this.ctx.fillStyle = this.textColor;
+    this.ctx.fillText(`Score: ${this.tetris.getScore()}`, 10, 25);
   }
 
   async draw() {
@@ -76,18 +102,10 @@ export class TetrisUI {
         this.ctx.fillStyle = "black";
         this.ctx.fillText(`GAME OVER`, 100, 400);
       } else {
-        if (this.uiframe === 35) {
+        if (this.uiframe === 150) {
           const domainEvents = this.tetris.pullDomainEvents();
           let didColide = false;
           for (const domainEvent of domainEvents) {
-            if (domainEvent instanceof CollisionEvent && !didColide) {
-              didColide = true;
-              this.tetris.generateNewActivePiece();
-              const completedRows = this.tetris.getCompletedRows();
-              if (completedRows.length > 0) {
-                this.tetris.removeTetrisLines(completedRows);
-              }
-            }
             if (domainEvent instanceof StartGameEvent) {
               this.tetris.isGamePaused();
               await this.audioHandler.startAudio();
@@ -104,22 +122,26 @@ export class TetrisUI {
 
           this.uiframe = 0;
         }
-
-        this.ctx.clearRect(0, 0, this.canva.width, this.canva.height);
-        const todraw = this.mapBoardToDrawableBlocks();
-
-        for (const draw of todraw) {
-          this.ctx.fillStyle = draw.color;
-          this.ctx.fillRect(draw.x, draw.y, this.heightBlock, this.widthBlock);
-        }
-        this.drawActivePiece();
-
-        this.ctx.font = "20px Arial";
-        this.ctx.fillStyle = "black";
-        this.ctx.fillText(`Score: ${this.tetris.getScore()}`, 10, 25);
-
-        if (!this.tetris.isGamePaused()) requestAnimationFrame(this.draw);
       }
+      this.ctx.clearRect(0, 0, this.canva.width, this.canva.height);
+
+      const todraw = this.mapBoardToDrawableBlocks();
+
+      for (const draw of todraw) {
+        this.ctx.beginPath();
+
+        this.ctx.rect(draw.x, draw.y, this.widthBlock, this.heightBlock);
+        this.ctx.lineWidth = 0.5;
+        this.ctx.strokeStyle = "black";
+        this.ctx.fillStyle = draw.color || this.squareBackgroundColor;
+        this.ctx.fill();
+        this.ctx.stroke();
+      }
+      this.drawActivePiece();
+
+      this.drawScoreText();
+
+      if (!this.tetris.isGamePaused()) requestAnimationFrame(this.draw);
     }
   }
 }
